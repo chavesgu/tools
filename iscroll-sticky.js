@@ -1,4 +1,4 @@
-export const extend = (iScroll) => {
+export const extendSticky = (iScroll) => {
   var m = Math,
 
     // Hoping iscroll gets easier to extend, so this can be skipped.
