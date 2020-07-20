@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+<!--  <script src="//cdn.chavesgu.com/echarts.min.js"></script>-->
+</head>
+<body>
+  <canvas id="canvas" width="1000" height="600"></canvas>
+<!--<div class="chart"></div>-->
+<!--<button>测试</button>-->
+</body>
+</html>
+<style>
+  body{
+    padding: 0;
+    margin: 0;
+  }
+  canvas{
+  }
+  .chart{
+    width: 600px;
+    height: 400px;
+    background: transparent;
+  }
+</style>
+<script>
+  const canvas = document.querySelector('#canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#000';
+  ctx.lineCap = "round";
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);
+  
+  // 进度条1
+  const r2 = 90;
+  const r1 = 100;
+  const x = 100;
+  const y = 100;
+  const percent = 70;
+  const start = Math.PI;
+  const end = Math.PI + Math.PI * 2 * (percent / 100);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x + r1, y + r1, r1, start, end, false); // 顺时针
+  ctx.arc(x + r1, y + r1, r2, end, start, true); // 逆时针
+  ctx.clip();
+
+  ctx.fillStyle = '#f00';
+  ctx.fillRect(x, y, r1*2, r1*2);
+  ctx.restore();
+  
+  ctx.save();
+  ctx.font = '30px 微软雅黑';
+  ctx.fillStyle = '#f00';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(percent + '%', x + r1, x + r1);
+  ctx.restore();
+  
+  
+  // 进度条2
+  
+  ctx.save();
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.arc(400, 400, 100, Math.PI, Math.PI + Math.PI * 2 * (30 / 100), false);
+  ctx.stroke();
+
+
+  ctx.font = '30px 微软雅黑';
+  ctx.fillStyle = '#000';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(30 + '%', 400, 400);
+  
+  ctx.restore();
+
+  
+  
+</script>

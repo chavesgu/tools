@@ -1,98 +1,111 @@
+/* eslint-disable */
 export const extendSticky = (iScroll) => {
-  var m = Math,
-
-    // Hoping iscroll gets easier to extend, so this can be skipped.
-    vendor = (/webkit/i).test(navigator.appVersion) ? 'webkit' :
+  let m = Math;
+  let vendor = (/webkit/i).test(navigator.appVersion) ? 'webkit' :
       (/firefox/i).test(navigator.userAgent) ? 'Moz' :
         'opera' in window ? 'O' : '',
     has3d = 'WebKitCSSMatrix' in window && 'm11' in new WebKitCSSMatrix(),
     trnOpen = 'translate' + (has3d ? '3d(' : '('),
     trnClose = has3d ? ',0)' : ')';
-
-  iScroll.prototype.enableStickyHeaders = function (selector) {
-    return new iScrollStickyHeaders(this, selector);
+  
+  /**
+   *
+   * @param selector 需要sticky的对象集合
+   * @param mode 模式，默认autocover自动叠加吸顶， custom用户自定义位置模式
+   * @return { iScrollStickyHeaders }
+   */
+  iScroll.prototype.enableStickyHeaders = function (selector, mode = 'autocover') {
+    return new iScrollStickyHeaders(this, selector, mode);
   };
 
-  var iScrollStickyHeaders = function (iscroll, selector) {
+  let iScrollStickyHeaders = function (iscroll, selector, mode) {
     if (!iscroll.options.useTransform) {
       return;
     }
-
     this.iscroll = iscroll;
-    this.selector = selector;
-
+    if (mode === 'autocover') {
+      this.selector = selector.map(obj => obj.el);
+    }
+    if (mode === 'custom') {
+      this.selector = selector;
+    }
+    this.mode = mode;
     this.initialize();
   };
-
   iScrollStickyHeaders.prototype = {
-
     headers: [],
-
-    initialize: function () {
-      var that = this;
-
+    initialize() {
+      let that = this;
       this._augment();
-
       this.iscroll.on('refresh', function() {
-        that.refresh()
+        that._refresh()
       });
-
       this.iscroll.refresh()
     },
-
-    refresh: function () {
-      var i, ii,
-        elms = this.iscroll.scroller.querySelectorAll(this.selector);
-
+    _refresh() {
+      let elms = this.selector;
       this.headers = [];
-
-      for (i = 0, ii = elms.length; i < ii; i++) {
-        var header = {
-            elm: elms[i],
-            minY: elms[i].offsetTop,
-            maxY: elms[i].offsetHeight + elms[i].offsetTop
-          },
-          prevHeader = this.headers[i - 1];
-
-
-        if (prevHeader) {
-          prevHeader.maxY = m.abs(prevHeader.maxY - header.minY);
-        }
-
-        this.headers.push(header);
+      if (this.mode === 'autocover') {
+        elms.forEach((el, index) => {
+          let header = {
+            el: el,
+            minY: el.offsetTop,
+            maxY: el.offsetHeight + el.offsetTop
+          };
+          let prevHeader = this.headers[index - 1];
+          if (prevHeader) {
+            prevHeader.maxY = m.abs(prevHeader.maxY - header.minY);
+          }
+          this.headers.push(header);
+        });
       }
-
+      if (this.mode === 'custom') {
+        this.headers = [
+          ...elms,
+        ]
+      }
       this._translate();
     },
-
-    _translate: function (x, y) {
-      var absY = m.abs(y),
-        preventTranslate = y > 0;
-
-      for (var i = 0, ii = this.headers.length; i < ii; i++) {
-        var header = this.headers[i],
-          translateY = absY - header.minY;
-
-        if (preventTranslate || translateY < 0) {
-          translateY = 0;
-        } else if (translateY > header.maxY) {
-          // Skip the check for the last section head because there is now max allowed position
-          if (i + 1 !== ii)
-          // Make sure it never exceeds it's max allowed position
-            translateY = header.maxY;
-        }
-
-        header.elm.style[vendor + 'Transform'] = trnOpen + ('0, ' + translateY + 'px') + trnClose;
+    _translate(x, y) {
+      let absY = m.abs(y);
+      let preventTranslate = y > 0;
+      if (this.mode === 'autocover') {
+        this.headers.forEach((stickyObj, index) => {
+          let translateY = absY - stickyObj.minY;
+          if (preventTranslate || translateY < 0) {
+            translateY = 0;
+          } else if (translateY > stickyObj.maxY) {
+            if (index + 1 !== this.headers.length)
+              translateY = stickyObj.maxY;
+          }
+          stickyObj.el.style[vendor + 'Transform'] = trnOpen + ('0, ' + translateY + 'px') + trnClose;
+        });
+      }
+      if (this.mode === 'custom') {
+        this.headers.forEach((stickyObj) => {
+          let translateY = 0;
+          let yy = m.abs(absY - stickyObj.el.offsetTop);
+          if (absY - stickyObj.el.offsetTop > 0 || yy <= stickyObj.top) {
+            translateY = absY - (stickyObj.el.offsetTop - stickyObj.top);
+          } else {
+            translateY = 0;
+          }
+          stickyObj.el.style[vendor + 'Transform'] = trnOpen + ('0, ' + translateY + 'px') + trnClose;
+        });
       }
     },
-
-    _augment: function () {
-      var that = this;
-
+    _augment() {
+      let that = this;
       this.iscroll.on('scroll', function() {
         that._translate(this.x, this.y)
       });
+      this.iscroll.on('beforeScrollStart', function() {
+        that._translate(this.x, this.y)
+      });
+      this.iscroll.on('scrollStart', function() {
+        that._translate(this.x, this.y)
+      });
     }
-
   };
 };
+export default extendSticky;
